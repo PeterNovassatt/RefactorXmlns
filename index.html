@@ -98,6 +98,10 @@ details[open] summary::before{transform:rotate(90deg)}
 .item.s-fail{background:var(--fail-bg)}
 .item .nm{flex:1;min-width:0;overflow-wrap:anywhere}
 .item .nm small{display:block;color:var(--ink-3);font-size:11.5px;overflow-wrap:anywhere}
+.copy{flex-shrink:0;border:1px solid var(--line);border-radius:7px;background:var(--panel);
+  color:var(--ink-3);font:inherit;font-size:12px;padding:4px 9px;cursor:pointer;min-width:34px}
+.copy:hover{color:var(--ink);border-color:var(--ink-3)}
+.copy.done{background:var(--ok);border-color:var(--ok);color:#fff}
 .tri{display:flex;border:1px solid var(--line);border-radius:7px;overflow:hidden;flex-shrink:0}
 .tri button{border:0;background:var(--panel);color:var(--ink-2);font:inherit;font-size:12px;
   padding:4px 10px;cursor:pointer;border-right:1px solid var(--line)}
@@ -239,10 +243,11 @@ DATA.forEach(function(f,fi){
   f.items.forEach(function(it,ii){
     var id=f.feature+"/"+it.n;
     groups[it.k].push(
-      '<div class="wrapitem" data-id="'+esc(id)+'" data-kind="'+it.k+'" data-name="'+esc((it.n+" "+f.feature).toLowerCase())+'">'+
+      '<div class="wrapitem" data-id="'+esc(id)+'" data-kind="'+it.k+'" data-copy="'+esc(it.n)+'" data-name="'+esc((it.n+" "+f.feature).toLowerCase())+'">'+
       '<div class="item">'+
         '<span class="nm">'+esc(it.n)+'<small class="mono">'+esc(it.p)+'</small></span>'+
-        '<span class="tri">'+
+        '<button class="copy" type="button" title="Copiar nome" aria-label="Copiar nome da page">⧉</button>'+
+      '<span class="tri">'+
           '<button class="y" data-s="ok" title="Passou">OK</button>'+
           '<button class="n" data-s="fail" title="Falhou">Falhou</button>'+
           '<button class="q" data-s="skip" title="Não aplicável">N/A</button>'+
@@ -311,7 +316,31 @@ function paint(){
   document.getElementById("empty").hidden = shown>0;
 }
 
+function copyText(t){
+  if(navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(t);
+  return new Promise(function(res,rej){
+    var ta=document.createElement("textarea");
+    ta.value=t; ta.setAttribute("readonly","");
+    ta.style.position="fixed"; ta.style.opacity="0";
+    document.body.appendChild(ta); ta.select();
+    try{ document.execCommand("copy"); res(); }catch(err){ rej(err); }
+    finally{ ta.remove(); }
+  });
+}
+
 list.addEventListener("click",function(e){
+  var c=e.target.closest(".copy");
+  if(c){
+    var name=c.closest(".wrapitem").dataset.copy;
+    copyText(name).then(function(){
+      c.textContent="✓"; c.classList.add("done");
+      setTimeout(function(){ c.textContent="⧉"; c.classList.remove("done"); },1100);
+    }).catch(function(){
+      c.textContent="✕";
+      setTimeout(function(){ c.textContent="⧉"; },1100);
+    });
+    return;
+  }
   var b=e.target.closest(".tri button"); if(!b) return;
   setSt(b.closest(".wrapitem").dataset.id, b.dataset.s); paint();
 });
