@@ -20,6 +20,14 @@
     --chip:#21252b; --shadow:0 1px 2px rgba(0,0,0,.4);
   }
 }
+:root[data-theme="asaas"]{
+  --bg:#f2f6fd; --panel:#fff; --line:#dbe3f5; --line-soft:#eaf0fc;
+  --ink:#0f1938; --ink-2:#48547a; --ink-3:#7b86a4;
+  --accent:#0038e5; --ok:#198754; --ok-bg:#e8f3ee; --fail:#ff356e; --fail-bg:#ffebf1;
+  --chip:#e7f1ff; --shadow:0 1px 2px rgba(0,56,229,.07),0 2px 10px rgba(0,56,229,.05);
+}
+:root[data-theme="asaas"] .btn.on{background:var(--accent);border-color:var(--accent)}
+:root[data-theme="asaas"] header.top{background:linear-gradient(180deg,#e7f1ff 0%,var(--panel) 100%)}
 :root[data-theme="dark"]{
   --bg:#101216; --panel:#171a1f; --line:#272c34; --line-soft:#21252b;
   --ink:#e8eaee; --ink-2:#9aa3af; --ink-3:#6d7683;
@@ -68,7 +76,11 @@ input[type=search]:focus{outline:2px solid var(--accent);outline-offset:-1px;bor
   font:inherit;cursor:pointer;white-space:nowrap}
 .btn:hover{border-color:var(--ink-3)}
 .btn.on{background:var(--accent);border-color:var(--accent);color:#fff}
-.total{font-variant-numeric:tabular-nums;color:var(--ink-2);font-size:12.5px;margin-left:auto}
+.themer{display:flex;margin-left:auto}
+.themer .th{border-radius:0;margin-left:-1px}
+.themer .th:first-child{border-radius:8px 0 0 8px;margin-left:0}
+.themer .th:last-child{border-radius:0 8px 8px 0}
+.total{font-variant-numeric:tabular-nums;color:var(--ink-2);font-size:12.5px;margin-left:12px}
 .meter{height:5px;background:var(--line-soft);border-radius:99px;overflow:hidden;display:flex}
 .meter i{display:block;height:100%}
 .meter i.ok{background:var(--ok)} .meter i.fail{background:var(--fail)}
@@ -181,6 +193,11 @@ footer{margin-top:30px;padding-top:18px;border-top:1px solid var(--line);color:v
     <button class="btn" id="expand">Expandir</button>
     <button class="btn" id="export">Exportar</button>
     <button class="btn" id="reset">Limpar</button>
+    <span class="themer" role="group" aria-label="Tema">
+      <button class="btn th" data-theme-set="light" title="Tema claro">Claro</button>
+      <button class="btn th" data-theme-set="dark" title="Tema escuro">Escuro</button>
+      <button class="btn th" data-theme-set="asaas" title="Tema Asaas">Asaas</button>
+    </span>
     <span class="total" id="total"></span>
   </div>
   <div class="meter" aria-hidden="true"><i class="ok" id="gOk"></i><i class="fail" id="gFail"></i></div>
@@ -198,6 +215,34 @@ footer{margin-top:30px;padding-top:18px;border-top:1px solid var(--line);color:v
 (function(){
 "use strict";
 var KEY="mb352.testplan.v1";
+var TKEY="mb352.testplan.theme";
+
+function readTheme(){
+  try{ return localStorage.getItem(TKEY); }catch(e){ return null; }
+}
+function applyTheme(t){
+  var root=document.documentElement;
+  if(t) root.setAttribute("data-theme",t); else root.removeAttribute("data-theme");
+  var sysDark = window.matchMedia && window.matchMedia("(prefers-color-scheme:dark)").matches;
+  var active = t || (sysDark ? "dark" : "light");
+  document.querySelectorAll(".themer .th").forEach(function(b){
+    var on = b.dataset.themeSet===active;
+    b.classList.toggle("on",on);
+    b.setAttribute("aria-pressed",String(on));
+  });
+}
+applyTheme(readTheme());
+document.addEventListener("click",function(e){
+  var b=e.target.closest(".themer .th"); if(!b) return;
+  var t=b.dataset.themeSet;
+  try{ localStorage.setItem(TKEY,t); }catch(err){}
+  applyTheme(t);
+});
+if(window.matchMedia){
+  window.matchMedia("(prefers-color-scheme:dark)").addEventListener("change",function(){
+    if(!readTheme()) applyTheme(null);
+  });
+}
 var state=load();
 var filters={q:"",pend:false,fail:false,views:false};
 
